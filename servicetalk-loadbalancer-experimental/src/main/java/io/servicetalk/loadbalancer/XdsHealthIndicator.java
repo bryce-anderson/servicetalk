@@ -34,8 +34,7 @@ import static io.servicetalk.utils.internal.RandomUtils.nextLongInclusive;
 import static java.lang.Math.max;
 import static java.util.Objects.requireNonNull;
 
-abstract class XdsHealthIndicator<ResolvedAddress, C extends LoadBalancedConnection> extends DefaultRequestTracker
-        implements HealthIndicator<ResolvedAddress, C> {
+abstract class XdsHealthIndicator extends DefaultRequestTracker implements HealthIndicator {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(XdsHealthIndicator.class);
 
@@ -45,15 +44,11 @@ abstract class XdsHealthIndicator<ResolvedAddress, C extends LoadBalancedConnect
     private final SequentialExecutor sequentialExecutor;
     private final Executor executor;
     private final HostObserver hostObserver;
-    private final ResolvedAddress address;
+    private final Object address;
     private final String lbDescription;
     private final AtomicInteger consecutive5xx = new AtomicInteger();
     private final AtomicLong successes = new AtomicLong();
     private final AtomicLong failures = new AtomicLong();
-
-    @Nullable
-    private Host<ResolvedAddress, C> host;
-
 
     // reads and writes protected by the helpers `SequentialExecutor`.
     private boolean cancelled;
@@ -65,7 +60,7 @@ abstract class XdsHealthIndicator<ResolvedAddress, C extends LoadBalancedConnect
 
     XdsHealthIndicator(final SequentialExecutor sequentialExecutor, final Executor executor,
                        final Duration ewmaHalfLife, final long cancellationPenalty, final long errorPenalty,
-                       final ResolvedAddress address, String lbDescription,
+                       final Object address, String lbDescription,
                        final HostObserver hostObserver) {
         super(requireNonNull(ewmaHalfLife, "ewmaHalfLife").toNanos(),
                 ensureNonNegative(cancellationPenalty, "cancellationPenalty"),
@@ -103,11 +98,6 @@ abstract class XdsHealthIndicator<ResolvedAddress, C extends LoadBalancedConnect
     @Override
     protected final long currentTimeNanos() {
         return executor.currentTime(TimeUnit.NANOSECONDS);
-    }
-
-    @Override
-    public final void setHost(Host<ResolvedAddress, C> host) {
-        this.host = requireNonNull(host, "host");
     }
 
     @Override

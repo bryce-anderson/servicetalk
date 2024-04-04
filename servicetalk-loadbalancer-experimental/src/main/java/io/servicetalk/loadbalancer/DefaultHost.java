@@ -84,7 +84,7 @@ final class DefaultHost<Addr, C extends LoadBalancedConnection> implements Host<
     @Nullable
     private final ConnectionPoolStrategy<C> connectionPoolStrategy;
     @Nullable
-    private final HealthIndicator<Addr, C> healthIndicator;
+    private final HealthIndicator healthIndicator;
     private final LoadBalancerObserver.HostObserver hostObserver;
     private final ConnectionFactory<Addr, ? extends C> connectionFactory;
     private final ListenableAsyncCloseable closeable;

@@ -24,8 +24,7 @@ import static java.util.Objects.requireNonNull;
 
 // A simple outlier detector implementation that only provides the basic `RequestTracker` implementation
 // so the P2C LoadBalancingPolicy can still be effective.
-final class NoopOutlierDetector<ResolvedAddress, C extends LoadBalancedConnection>
-        implements OutlierDetector<ResolvedAddress, C> {
+final class NoopOutlierDetector<ResolvedAddress> implements OutlierDetector<ResolvedAddress> {
 
     private final OutlierDetectorConfig outlierDetectorConfig;
     private final Executor executor;
@@ -41,13 +40,12 @@ final class NoopOutlierDetector<ResolvedAddress, C extends LoadBalancedConnectio
     }
 
     @Override
-    public HealthIndicator<ResolvedAddress, C> newHealthIndicator(
+    public HealthIndicator newHealthIndicator(
             ResolvedAddress resolvedAddress, LoadBalancerObserver.HostObserver hostObserver) {
         return new BasicHealthIndicator();
     }
 
-    private final class BasicHealthIndicator extends DefaultRequestTracker
-            implements HealthIndicator<ResolvedAddress, C> {
+    private final class BasicHealthIndicator extends DefaultRequestTracker implements HealthIndicator {
 
         BasicHealthIndicator() {
             super(outlierDetectorConfig.ewmaHalfLife().toNanos(), outlierDetectorConfig.ewmaCancellationPenalty(),
@@ -82,11 +80,6 @@ final class NoopOutlierDetector<ResolvedAddress, C extends LoadBalancedConnectio
         @Override
         public boolean isHealthy() {
             return true;
-        }
-
-        @Override
-        public void setHost(Host<ResolvedAddress, C> host) {
-            // noop
         }
     }
 }

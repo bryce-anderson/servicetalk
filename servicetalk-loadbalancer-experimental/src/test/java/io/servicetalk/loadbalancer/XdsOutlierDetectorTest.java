@@ -35,7 +35,7 @@ class XdsOutlierDetectorTest {
             .build();
 
     @Nullable
-    XdsOutlierDetector<String, TestLoadBalancedConnection> xdsOutlierDetector;
+    XdsOutlierDetector<String> xdsOutlierDetector;
 
     private void init() {
         xdsOutlierDetector = new XdsOutlierDetector<>(
@@ -48,7 +48,7 @@ class XdsOutlierDetectorTest {
     @Test
     void outlierDetectorCancellation() {
         init();
-        HealthIndicator<String, TestLoadBalancedConnection> indicator = xdsOutlierDetector.newHealthIndicator(
+        HealthIndicator indicator = xdsOutlierDetector.newHealthIndicator(
                 "addr-1", NoopLoadBalancerObserver.instance().hostObserver("addr-1"));
         xdsOutlierDetector.cancel();
         assertThat(indicator.isHealthy(), equalTo(true));
@@ -57,7 +57,7 @@ class XdsOutlierDetectorTest {
     @Test
     void cancellationOfEvictedHealthIndicatorMarksHostUnejected() {
         init();
-        HealthIndicator<String, TestLoadBalancedConnection> healthIndicator = xdsOutlierDetector.newHealthIndicator(
+        HealthIndicator healthIndicator = xdsOutlierDetector.newHealthIndicator(
                 "addr-1", NoopLoadBalancerObserver.instance().hostObserver("addr-1"));
         eject(healthIndicator);
         assertThat(healthIndicator.isHealthy(), equalTo(false));
@@ -73,9 +73,9 @@ class XdsOutlierDetectorTest {
                 .build();
         init();
 
-        HealthIndicator<String, TestLoadBalancedConnection> indicator1 = xdsOutlierDetector.newHealthIndicator(
+        HealthIndicator indicator1 = xdsOutlierDetector.newHealthIndicator(
                 "addr-1", NoopLoadBalancerObserver.instance().hostObserver("addr-1"));
-        HealthIndicator<String, TestLoadBalancedConnection> indicator2 = xdsOutlierDetector.newHealthIndicator(
+        HealthIndicator indicator2 = xdsOutlierDetector.newHealthIndicator(
                 "addr-2", NoopLoadBalancerObserver.instance().hostObserver("addr-2"));
         eject(indicator1);
         assertThat(xdsOutlierDetector.ejectedHostCount(), equalTo(1));
@@ -99,7 +99,7 @@ class XdsOutlierDetectorTest {
     @Test
     void hostRevival() {
         init();
-        HealthIndicator<String, TestLoadBalancedConnection> indicator = xdsOutlierDetector.newHealthIndicator(
+        HealthIndicator indicator = xdsOutlierDetector.newHealthIndicator(
                 "addr-1", NoopLoadBalancerObserver.instance().hostObserver("addr-1"));
         eject(indicator);
         assertThat(indicator.isHealthy(), equalTo(false));
@@ -107,7 +107,7 @@ class XdsOutlierDetectorTest {
         assertThat(indicator.isHealthy(), equalTo(true));
     }
 
-    private void eject(HealthIndicator<String, TestLoadBalancedConnection> indicator) {
+    private void eject(HealthIndicator indicator) {
         for (int i = 0; i < config.consecutive5xx(); i++) {
             indicator.onRequestError(indicator.beforeConnectStart(), ErrorClass.EXT_ORIGIN_REQUEST_FAILED);
         }

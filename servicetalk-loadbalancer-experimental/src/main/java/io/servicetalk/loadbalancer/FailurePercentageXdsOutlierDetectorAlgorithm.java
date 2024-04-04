@@ -15,8 +15,6 @@
  */
 package io.servicetalk.loadbalancer;
 
-import io.servicetalk.client.api.LoadBalancedConnection;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,8 +22,7 @@ import java.util.Collection;
 
 import static io.servicetalk.loadbalancer.OutlierDetectorConfig.enforcing;
 
-final class FailurePercentageXdsOutlierDetectorAlgorithm<ResolvedAddress, C extends LoadBalancedConnection>
-        implements XdsOutlierDetectorAlgorithm<ResolvedAddress, C> {
+final class FailurePercentageXdsOutlierDetectorAlgorithm implements XdsOutlierDetectorAlgorithm {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FailurePercentageXdsOutlierDetectorAlgorithm.class);
 
@@ -35,12 +32,12 @@ final class FailurePercentageXdsOutlierDetectorAlgorithm<ResolvedAddress, C exte
 
     @Override
     public void detectOutliers(final OutlierDetectorConfig config,
-                               final Collection<XdsHealthIndicator<ResolvedAddress, C>> indicators) {
+                               final Collection<XdsHealthIndicator> indicators) {
         final long[] failurePercentages = new long[indicators.size()];
         int i = 0;
         int enoughVolumeHosts = 0;
         int alreadyEjectedHosts = 0;
-        for (XdsHealthIndicator<?, ?> indicator : indicators) {
+        for (XdsHealthIndicator indicator : indicators) {
             if (!indicator.isHealthy()) {
                 failurePercentages[i] = NOT_EVALUATED;
                 alreadyEjectedHosts++;
@@ -70,7 +67,7 @@ final class FailurePercentageXdsOutlierDetectorAlgorithm<ResolvedAddress, C exte
         final double failurePercentageThreshold = config.failurePercentageThreshold();
         int ejectedCount = 0;
         i = 0;
-        for (XdsHealthIndicator<?, ?> indicator : indicators) {
+        for (XdsHealthIndicator indicator : indicators) {
             long failurePercentage = failurePercentages[i++];
             if (indicator.updateOutlierStatus(config, failurePercentage == NOT_EVALUATED ||
                     failurePercentage >= failurePercentageThreshold &&

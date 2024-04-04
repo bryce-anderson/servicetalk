@@ -207,7 +207,7 @@ class XdsHealthIndicatorTest {
         sequentialExecutor.execute(() -> healthIndicator.updateOutlierStatus(config, isOutlier));
     }
 
-    private class TestIndicator extends XdsHealthIndicator<String, TestLoadBalancedConnection> {
+    private class TestIndicator extends XdsHealthIndicator {
 
         private final OutlierDetectorConfig config;
         boolean cancelled;

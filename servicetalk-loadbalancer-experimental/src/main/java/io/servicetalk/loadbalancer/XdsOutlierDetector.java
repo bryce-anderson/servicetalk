@@ -59,8 +59,7 @@ import static java.util.Objects.requireNonNull;
  * by the application without a control plane.
  * @param <ResolvedAddress> the type of the resolved address.
  */
-final class XdsOutlierDetector<ResolvedAddress, C extends LoadBalancedConnection>
-        implements OutlierDetector<ResolvedAddress, C> {
+final class XdsOutlierDetector<ResolvedAddress> implements OutlierDetector<ResolvedAddress> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(XdsOutlierDetector.class);
 
@@ -70,7 +69,7 @@ final class XdsOutlierDetector<ResolvedAddress, C extends LoadBalancedConnection
     private final Kernel kernel;
     private final AtomicInteger indicatorCount = new AtomicInteger();
     // Protected by `sequentialExecutor`.
-    private final Set<XdsHealthIndicator<ResolvedAddress, C>> indicators = new HashSet<>();
+    private final Set<XdsHealthIndicator> indicators = new HashSet<>();
     // reads and writes are protected by `sequentialExecutor`.
     private int ejectedHostCount;
 
@@ -92,8 +91,8 @@ final class XdsOutlierDetector<ResolvedAddress, C extends LoadBalancedConnection
     }
 
     @Override
-    public HealthIndicator<ResolvedAddress, C> newHealthIndicator(ResolvedAddress address, HostObserver hostObserver) {
-        XdsHealthIndicator<ResolvedAddress, C> result = new XdsHealthIndicatorImpl(
+    public HealthIndicator newHealthIndicator(ResolvedAddress address, HostObserver hostObserver) {
+        XdsHealthIndicator result = new XdsHealthIndicatorImpl(
                 address, kernel.config, hostObserver);
         sequentialExecutor.execute(() -> indicators.add(result));
         indicatorCount.incrementAndGet();
@@ -104,7 +103,7 @@ final class XdsOutlierDetector<ResolvedAddress, C extends LoadBalancedConnection
     public void cancel() {
         kernel.cancel();
         sequentialExecutor.execute(() -> {
-            List<XdsHealthIndicator<ResolvedAddress, C>> indicatorList = new ArrayList<>(indicators);
+            List<XdsHealthIndicator> indicatorList = new ArrayList<>(indicators);
             for (XdsHealthIndicator indicator : indicatorList) {
                 indicator.sequentialCancel();
             }
@@ -118,7 +117,7 @@ final class XdsOutlierDetector<ResolvedAddress, C extends LoadBalancedConnection
         return ejectedHostCount;
     }
 
-    private final class XdsHealthIndicatorImpl extends XdsHealthIndicator<ResolvedAddress, C> {
+    private final class XdsHealthIndicatorImpl extends XdsHealthIndicator {
 
         XdsHealthIndicatorImpl(final ResolvedAddress address, OutlierDetectorConfig outlierDetectorConfig,
                                HostObserver hostObserver) {
@@ -163,7 +162,7 @@ final class XdsOutlierDetector<ResolvedAddress, C extends LoadBalancedConnection
     //  config update. However, we'll need to make a `Helper` that dynamically forwards to the latest `Kernel`.
     private final class Kernel {
         private final SequentialCancellable cancellable;
-        private final List<XdsOutlierDetectorAlgorithm<ResolvedAddress, C>> algorithms;
+        private final List<XdsOutlierDetectorAlgorithm> algorithms;
         private final OutlierDetectorConfig config;
 
         Kernel(final OutlierDetectorConfig config) {
@@ -188,34 +187,33 @@ final class XdsOutlierDetector<ResolvedAddress, C extends LoadBalancedConnection
 
         private void sequentialCheckOutliers() {
             assert sequentialExecutor.isCurrentThreadDraining();
-            for (XdsOutlierDetectorAlgorithm<ResolvedAddress, C> outlierDetector : algorithms) {
+            for (XdsOutlierDetectorAlgorithm outlierDetector : algorithms) {
                 outlierDetector.detectOutliers(config, indicators);
             }
             cancellable.nextCancellable(scheduleNextOutliersCheck(config));
         }
     }
 
-    private List<XdsOutlierDetectorAlgorithm<ResolvedAddress, C>> getAlgorithms(OutlierDetectorConfig config) {
-        List<XdsOutlierDetectorAlgorithm<ResolvedAddress, C>> detectors = new ArrayList<>(2);
+    private List<XdsOutlierDetectorAlgorithm> getAlgorithms(OutlierDetectorConfig config) {
+        List<XdsOutlierDetectorAlgorithm> detectors = new ArrayList<>(2);
         if (config.enforcingFailurePercentage() > 0) {
-            detectors.add(new FailurePercentageXdsOutlierDetectorAlgorithm<>());
+            detectors.add(new FailurePercentageXdsOutlierDetectorAlgorithm());
         }
         if (config.enforcingSuccessRate() > 0) {
-            detectors.add(new SuccessRateXdsOutlierDetectorAlgorithm<>());
+            detectors.add(new SuccessRateXdsOutlierDetectorAlgorithm());
         }
         // We need at least one failure detector so that we can decrement the failure multiplier on each interval.
         if (detectors.isEmpty()) {
-            detectors.add(new AlwaysHealthyOutlierDetectorAlgorithm<>());
+            detectors.add(new AlwaysHealthyOutlierDetectorAlgorithm());
         }
         return detectors;
     }
 
-    private static final class AlwaysHealthyOutlierDetectorAlgorithm<ResolvedAddress, C extends LoadBalancedConnection>
-            implements XdsOutlierDetectorAlgorithm<ResolvedAddress, C> {
+    private static final class AlwaysHealthyOutlierDetectorAlgorithm implements XdsOutlierDetectorAlgorithm {
 
         @Override
         public void detectOutliers(final OutlierDetectorConfig config,
-                                   final Collection<XdsHealthIndicator<ResolvedAddress, C>> indicators) {
+                                   final Collection<XdsHealthIndicator> indicators) {
             int unhealthy = 0;
             for (XdsHealthIndicator indicator : indicators) {
                 // Hosts can still be marked unhealthy due to consecutive failures.

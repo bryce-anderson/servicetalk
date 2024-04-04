@@ -34,8 +34,7 @@ import static io.servicetalk.loadbalancer.OutlierDetectorConfig.enforcing;
  * @see <a href="https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/outlier#success-rate">Envoy
  * Outlier detection</a> documentation for more details.
  */
-final class SuccessRateXdsOutlierDetectorAlgorithm<ResolvedAddress, C extends LoadBalancedConnection>
-        implements XdsOutlierDetectorAlgorithm<ResolvedAddress, C> {
+final class SuccessRateXdsOutlierDetectorAlgorithm implements XdsOutlierDetectorAlgorithm {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SuccessRateXdsOutlierDetectorAlgorithm.class);
 
@@ -45,13 +44,13 @@ final class SuccessRateXdsOutlierDetectorAlgorithm<ResolvedAddress, C extends Lo
 
     @Override
     public void detectOutliers(final OutlierDetectorConfig config,
-                               final Collection<XdsHealthIndicator<ResolvedAddress, C>> indicators) {
+                               final Collection<XdsHealthIndicator> indicators) {
         LOGGER.debug("Started outlier detection.");
         final double[] successRates = new double[indicators.size()];
         int i = 0;
         int enoughVolumeHosts = 0;
         int alreadyEjectedHosts = 0;
-        for (XdsHealthIndicator<?, ?> indicator : indicators) {
+        for (XdsHealthIndicator indicator : indicators) {
             if (!indicator.isHealthy()) {
                 successRates[i] = NOT_EVALUATED;
                 alreadyEjectedHosts++;
@@ -83,7 +82,7 @@ final class SuccessRateXdsOutlierDetectorAlgorithm<ResolvedAddress, C extends Lo
         final double requiredSuccessRate = mean - stdev * (config.successRateStdevFactor() / 1000d);
         int ejectedCount = 0;
         i = 0;
-        for (XdsHealthIndicator<?, ?> indicator : indicators) {
+        for (XdsHealthIndicator indicator : indicators) {
             double successRate = successRates[i++];
             if (indicator.updateOutlierStatus(config, successRate == NOT_EVALUATED ||
                     successRate < requiredSuccessRate && enforcing(config.enforcingSuccessRate()))) {

@@ -44,7 +44,7 @@ class XdsOutlierDetectorAlgorithmTest {
     @Nullable
     TestExecutor testExecutor;
     OutlierDetectorConfig config;
-    XdsOutlierDetector<String, TestLoadBalancedConnection> outlierDetector;
+    XdsOutlierDetector<String> outlierDetector;
 
     private OutlierDetectorConfig.Builder withAllEnforcing() {
         return new OutlierDetectorConfig.Builder()
@@ -63,7 +63,7 @@ class XdsOutlierDetectorAlgorithmTest {
         outlierDetector = buildOutlierDetector();
     }
 
-    private XdsOutlierDetector<String, TestLoadBalancedConnection> buildOutlierDetector() {
+    private XdsOutlierDetector<String> buildOutlierDetector() {
         return new XdsOutlierDetector<>(new NormalizedTimeSourceExecutor(testExecutor), config, "");
     }
 

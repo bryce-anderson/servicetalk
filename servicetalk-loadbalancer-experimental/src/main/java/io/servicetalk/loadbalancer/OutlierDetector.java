@@ -22,7 +22,7 @@ import io.servicetalk.loadbalancer.LoadBalancerObserver.HostObserver;
 /**
  * The representation of a health checking system for use with load balancing.
  */
-interface OutlierDetector<ResolvedAddress, C extends LoadBalancedConnection> extends Cancellable {
+interface OutlierDetector<ResolvedAddress> extends Cancellable {
 
     /**
      * Construct a new {@link HealthIndicator}.
@@ -32,5 +32,5 @@ interface OutlierDetector<ResolvedAddress, C extends LoadBalancedConnection> ext
      * @param address the resolved address of the destination.
      * @return new {@link HealthIndicator}.
      */
-    HealthIndicator<ResolvedAddress, C> newHealthIndicator(ResolvedAddress address, HostObserver hostObserver);
+    HealthIndicator newHealthIndicator(ResolvedAddress address, HostObserver hostObserver);
 }

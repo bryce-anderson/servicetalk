@@ -102,9 +102,9 @@ final class DefaultLoadBalancerBuilder<ResolvedAddress, C extends LoadBalancedCo
         }
         final LoadBalancerObserver loadBalancerObserver = this.loadBalancerObserver != null ?
                 this.loadBalancerObserver : NoopLoadBalancerObserver.instance();
-        final Function<String, OutlierDetector<ResolvedAddress, C>> outlierDetectorFactory;
+        final Function<String, OutlierDetector<ResolvedAddress>> outlierDetectorFactory;
         if (OutlierDetectorConfig.xDSDisabled(outlierDetectorConfig)) {
-            outlierDetectorFactory = (lbDescription) -> new NoopOutlierDetector<>(outlierDetectorConfig, executor);
+            outlierDetectorFactory = (lbDescription) -> new NoopOutlierDetector(outlierDetectorConfig, executor);
         } else {
             outlierDetectorFactory = (lbDescription) ->
                 new XdsOutlierDetector<>(executor, outlierDetectorConfig, lbDescription);
@@ -120,7 +120,7 @@ final class DefaultLoadBalancerBuilder<ResolvedAddress, C extends LoadBalancedCo
         private final LoadBalancingPolicy<ResolvedAddress, C> loadBalancingPolicy;
         private final LoadBalancerObserver loadBalancerObserver;
         @Nullable
-        private final Function<String, OutlierDetector<ResolvedAddress, C>> outlierDetectorFactory;
+        private final Function<String, OutlierDetector<ResolvedAddress>> outlierDetectorFactory;
         @Nullable
         private final HealthCheckConfig healthCheckConfig;
         private final ConnectionPoolStrategyFactory<C> connectionPoolStrategyFactory;
@@ -128,7 +128,7 @@ final class DefaultLoadBalancerBuilder<ResolvedAddress, C extends LoadBalancedCo
         DefaultLoadBalancerFactory(final String id, final LoadBalancingPolicy<ResolvedAddress, C> loadBalancingPolicy,
                                    final HealthCheckConfig healthCheckConfig,
                                    final LoadBalancerObserver loadBalancerObserver,
-                                   final Function<String, OutlierDetector<ResolvedAddress, C>> outlierDetectorFactory,
+                                   final Function<String, OutlierDetector<ResolvedAddress>> outlierDetectorFactory,
                                    final ConnectionPoolStrategyFactory<C> connectionPoolStrategyFactory) {
             this.id = requireNonNull(id, "id");
             this.loadBalancingPolicy = requireNonNull(loadBalancingPolicy, "loadBalancingPolicy");

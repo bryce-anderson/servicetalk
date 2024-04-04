@@ -15,19 +15,17 @@
  */
 package io.servicetalk.loadbalancer;
 
-import io.servicetalk.client.api.LoadBalancedConnection;
-
 import java.util.Collection;
 
 /**
  * Logic that can detect outliers and attempts to mark them as an outlier so that the load balancer
  * can try to route traffic to more healthy hosts.
  */
-interface XdsOutlierDetectorAlgorithm<ResolvedAddress, C extends LoadBalancedConnection> {
+interface XdsOutlierDetectorAlgorithm {
     /**
      * Analyze and potentially eject outlier hosts.
      * @param config the current {@link OutlierDetectorConfig} to use.
      * @param indicators an ordered list of {@link HealthIndicator} instances to collect stats from.
      */
-    void detectOutliers(OutlierDetectorConfig config, Collection<XdsHealthIndicator<ResolvedAddress, C>> indicators);
+    void detectOutliers(OutlierDetectorConfig config, Collection<XdsHealthIndicator> indicators);
 }

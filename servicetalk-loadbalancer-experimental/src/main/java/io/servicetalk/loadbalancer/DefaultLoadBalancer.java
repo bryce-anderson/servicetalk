@@ -106,7 +106,7 @@ final class DefaultLoadBalancer<ResolvedAddress, C extends LoadBalancedConnectio
     private final ConnectionFactory<ResolvedAddress, ? extends C> connectionFactory;
     @Nullable
     private final HealthCheckConfig healthCheckConfig;
-    private final OutlierDetector<ResolvedAddress, C> outlierDetector;
+    private final OutlierDetector<ResolvedAddress> outlierDetector;
     private final LoadBalancerObserver loadBalancerObserver;
     private final ListenableAsyncCloseable asyncCloseable;
 
@@ -132,7 +132,7 @@ final class DefaultLoadBalancer<ResolvedAddress, C extends LoadBalancedConnectio
             final ConnectionFactory<ResolvedAddress, ? extends C> connectionFactory,
             final LoadBalancerObserver loadBalancerObserver,
             @Nullable final HealthCheckConfig healthCheckConfig,
-            final Function<String, OutlierDetector<ResolvedAddress, C>> outlierDetectorFactory) {
+            final Function<String, OutlierDetector<ResolvedAddress>> outlierDetectorFactory) {
         this.targetResource = requireNonNull(targetResourceName);
         this.lbDescription = makeDescription(id, targetResource);
         this.hostSelector = requireNonNull(hostSelector, "hostSelector");
@@ -390,9 +390,6 @@ final class DefaultLoadBalancer<ResolvedAddress, C extends LoadBalancedConnectio
                     healthCheckConfig == null || healthCheckConfig.failedThreshold < 0 ? null : healthCheckConfig;
             final Host<ResolvedAddress, C> host = new DefaultHost<>(lbDescription, addr, connectionPoolStrategy,
                     connectionFactory, hostObserver, hostHealthCheckConfig, indicator);
-            if (indicator != null) {
-                indicator.setHost(host);
-            }
             host.onClose().afterFinally(() ->
                     sequentialExecutor.execute(() -> {
                         final List<Host<ResolvedAddress, C>> currentHosts = usedHosts;
