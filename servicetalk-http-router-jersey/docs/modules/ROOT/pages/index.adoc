@@ -87,6 +87,35 @@ public CompletionStage<Map<String, String>> hello(final Map<String, String> salu
 
 NOTE: Server-Sent Events are also fully supported.
 
+[#payload-size-limits]
+=== Limiting Request Payload Sizes
+
+Entity readers that buffer the whole request body in memory -- JAX-RS's own
+`String`, `byte[]` and form readers, and the `Buffer`, `Single<Buffer>` and
+JSON/Protobuf object readers described below -- do that buffering inside Jersey,
+after the body has been handed to the router. They are therefore *not* bounded by
+the server's
+xref:{page-version}@servicetalk-http-api::programming-paradigms.adoc[`maxAggregatedPayloadSize`],
+which only bounds aggregation performed by ServiceTalk itself. Left unbounded, a
+large request body is buffered in memory in full.
+
+To bound request payloads, add `PayloadSizeLimitingHttpServiceFilter` (from
+`servicetalk-http-utils`) to the server. It applies to every resource and entity
+type -- streaming reads included -- and rejects a request whose body exceeds the
+limit with `413 Payload Too Large`:
+
+[source,java]
+----
+HttpServers.forPort(8080)
+    .appendServiceFilter(new PayloadSizeLimitingHttpServiceFilter(1024 * 1024))
+    .listenStreamingAndAwait(new HttpJerseyRouterBuilder().build(jaxrsApplication))
+    .awaitShutdown()
+----
+
+NOTE: Resources that consume a `Publisher<Buffer>`, `InputStream` or `Reader` stream
+the body instead of buffering it, so they are only bounded by this filter -- which is
+what makes it the right place to express a payload size policy for the whole server.
+
 === ServiceTalk Aware Resources
 
 In addition to standard JAX-RS features, the Jersey router
