@@ -1,5 +1,5 @@
 /*
- * Copyright © 2018-2019, 2021-2022 Apple Inc. and the ServiceTalk project authors
+ * Copyright © 2018-2026 Apple Inc. and the ServiceTalk project authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -156,7 +156,9 @@ abstract class AbstractStreamingHttpConnection<CC extends NettyConnectionContext
                         // by the load balancer post cancel and the connection being closed by the transport.
                         // Transport MAY not close the connection if cancel raced with completion and completion was
                         // seen by the transport before cancel. We have no way of knowing at this layer if this indeed
-                        // happen. Therefore, we close the connection manually to guarantee closure.
+                        // happen. Therefore, we close the connection manually to guarantee closure. The close is
+                        // graceful so that an earlier pipelined response still being read can finish: it stops new
+                        // selections immediately, and the transport closes once this exchange's read turn arrives.
                         //
                         // For H2 and above, connection are multiplexed and use virtual streams for each
                         // request-response exchange. At the time users own a Cancellable, the stream already owns
@@ -166,7 +168,7 @@ abstract class AbstractStreamingHttpConnection<CC extends NettyConnectionContext
                             LOGGER.debug("{} {} request was cancelled before receiving the full response, " +
                                             "closing this {} connection to stop receiving more data",
                                     connectionContext, requestMetaData, connectionContext.protocol());
-                            closeAsync().subscribe();
+                            closeAsyncGracefully().subscribe();
                         }
                     }
                 })
